@@ -63,6 +63,14 @@ if st.button("Mutasd!"):
 
 st.header("🧹 Manuális szűrés és CSV frissítés")
 
+st.set_page_config(page_title="Nap szava - Szűrés", layout="wide")
+
+st.header("🧹 Manuális szűrés és CSV frissítés")
+
+# --- Állapot tárolása (pl. utolsó feldolgozott index) ---
+if "last_index" not in st.session_state:
+    st.session_state.last_index = 0
+
 # --- Fájlfeltöltés ---
 uploaded_file = st.file_uploader("Töltsd fel az eredeti CSV-t", type=["csv"])
 
@@ -78,31 +86,52 @@ if uploaded_file:
     else:
         filtered_df = df.copy()
 
-    st.caption(f"{len(filtered_df)} sor megjelenítve a {len(df)}-ből.")
+    # --- Lapozás beállítás ---
+    page_size = 100
+    total_pages = math.ceil(len(filtered_df) / page_size)
 
-    # --- Select All / Deselect All ---
-    select_all = st.checkbox("✅ Mindent kijelöl / kijelölés törlése")
+    page = st.number_input("Oldalszám", min_value=1, max_value=max(1, total_pages), value=1, step=1)
 
-    st.write("Jelöld ki a törlendő sorokat:")
+    start = (page - 1) * page_size
+    end = start + page_size
 
-    to_delete = []
+    paged_df = filtered_df.iloc[start:end].copy()
 
-    for i, row in filtered_df.iterrows():
-        checked = st.checkbox(
-            f"{row.get('szó', '')} – {row.get('beküldte', '')}",
-            key=f"chk_{i}",
-            value=select_all,
-        )
-        if checked:
-            to_delete.append(row.name)
+    st.caption(f"{len(filtered_df)} sor megjelenítve a {len(df)}-ből. ({total_pages} oldal)")
 
-    # --- Törlés gomb ---
-    if st.button("🗑️ Kijelölt sorok törlése"):
-        df = df.drop(to_delete).reset_index(drop=True)
-        st.success(f"{len(to_delete)} sor törölve. Új méret: {len(df)} sor.")
-        st.dataframe(df)
+    # --- Táblázatos megjelenítés checkboxokkal ---
+    st.write("✅ Pipáld ki a törlendő sorokat (több is kijelölhető):")
 
-        # --- Letöltés ---
+    edited_df = st.data_editor(
+        paged_df,
+        num_rows="dynamic",
+        use_container_width=True,
+        key=f"editor_page_{page}",
+        column_config={
+            "delete": st.column_config.CheckboxColumn(
+                "Törlés",
+                help="Pipáld be, ha ezt a sort törölni szeretnéd.",
+                default=False,
+            )
+        },
+        hide_index=False
+    )
+
+    # --- Sorok törlése ---
+    if st.button("🗑️ Kijelölt sorok törlése ebben az oldalban"):
+        if "delete" in edited_df.columns:
+            delete_indices = edited_df[edited_df["delete"] == True].index
+            df = df.drop(delete_indices).reset_index(drop=True)
+            st.success(f"{len(delete_indices)} sor törölve.")
+
+            # Frissítjük a session state-et, hogy megjegyezze, hol tartottál
+            if len(delete_indices) > 0:
+                st.session_state.last_index = delete_indices[-1] + 1
+
+        else:
+            st.warning("Nincs kijelölt sor a törléshez.")
+
+        # Frissített CSV letöltése
         csv = df.to_csv(index=False).encode("utf-8")
         st.download_button(
             label="📥 Letisztított CSV letöltése",
@@ -110,3 +139,9 @@ if uploaded_file:
             file_name="nap_szava_cleaned.csv",
             mime="text/csv",
         )
+
+    # --- Utolsó feldolgozott sor megjelenítése ---
+    if st.session_state.last_index > 0:
+        st.info(f"📍 Utolsó feldolgozott sor indexe: {st.session_state.last_index}")
+else:
+    st.info("📤 Töltsd fel a CSV-t a kezdéshez.")
