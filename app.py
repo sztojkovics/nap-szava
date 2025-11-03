@@ -39,7 +39,7 @@ if szo:
         st.success(f"✅ A '{szo}' szó előfordulásai:")
         st.dataframe(
             talalatok.sort_values("dátum", ascending=False)
-                      .reset_index(drop=True)
+                      .reset_index(drop=True).drop('szó_normalizalt', axis=1)
         )
 
 # --- Napra keresés ---
