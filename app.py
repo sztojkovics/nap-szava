@@ -15,9 +15,9 @@ def remove_accents(text):
 @st.cache_data
 def load_data():
     try:
-        return pd.read_csv(FILENAME, parse_dates=["datum"])
+        return pd.read_csv(FILENAME, parse_dates=["dátum"])
     except FileNotFoundError:
-        return pd.DataFrame(columns=["datum", "szó", "beküldő"])
+        return pd.DataFrame(columns=["dátum", "szó", "beküldő"])
 
 df = load_data()
 
@@ -38,7 +38,7 @@ if szo:
     else:
         st.success(f"✅ A '{szo}' szó előfordulásai:")
         st.dataframe(
-            talalatok.sort_values("datum", ascending=False)
+            talalatok.sort_values("dátum", ascending=False)
                       .reset_index(drop=True)
         )
 
@@ -48,13 +48,13 @@ honap = st.number_input("Hónap:", min_value=1, max_value=12, value=datetime.now
 nap = st.number_input("Nap:", min_value=1, max_value=31, value=datetime.now().day)
 
 if st.button("Mutasd!"):
-    df["datum"] = pd.to_datetime(df["datum"])
-    talalatok = df[(df["datum"].dt.month == honap) & (df["datum"].dt.day == nap)]
+    df["dátum"] = pd.to_datetime(df["dátum"])
+    talalatok = df[(df["dátum"].dt.month == honap) & (df["dátum"].dt.day == nap)]
     if talalatok.empty:
         st.info("Ezen a napon még nem volt szó.")
     else:
         st.success(f"✅ Szavak {honap:02d}-{nap:02d} napokon:")
         st.dataframe(
-            talalatok.sort_values("datum", ascending=False)
+            talalatok.sort_values("dátum", ascending=False)
                       .reset_index(drop=True)
         )
