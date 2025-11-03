@@ -156,11 +156,11 @@ if uploaded_file:
             on_click=lambda p=page_num: st.session_state.update(page=p),
         )
 
-    if next_.button(">"):
+    if next_.button("\>"):
         if st.session_state.page < total_pages:
             st.session_state.page += 1
             st.rerun()
-    if last.button(">>"):
+    if last.button("\>\>"):
         st.session_state.page = total_pages
         st.rerun()
 
