@@ -101,12 +101,19 @@ if uploaded_file:
 
     # --- Táblázatos megjelenítés ---
     st.markdown("""
-        <style>
-        .small-table td, .small-table th {
-            white-space: nowrap !important;
-            text-align: left !important;
-        }
-        </style>
+    <style>
+    div[data-testid="stDataFrame"] table {
+        table-layout: fixed;
+        width: 100%;
+    }
+    div[data-testid="stDataFrame"] td, div[data-testid="stDataFrame"] th {
+        white-space: nowrap !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 14px !important;
+        line-height: 1.2 !important;
+    }
+    </style>
     """, unsafe_allow_html=True)
 
     st.write("✅ Pipáld ki a törlendő sorokat (több is kijelölhető):")
@@ -119,13 +126,9 @@ if uploaded_file:
         paged_df,
         use_container_width=True,
         hide_index=False,
-        num_rows="dynamic",
+        height=600,
         column_config={
-            "delete": st.column_config.CheckboxColumn(
-                "Törlés",
-                help="Pipáld be, ha ezt a sort törölni szeretnéd.",
-                default=False,
-            )
+            "delete": st.column_config.CheckboxColumn("Törlés", default=False)
         },
         key=f"editor_page_{current_page}"
     )
