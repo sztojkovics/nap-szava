@@ -33,6 +33,7 @@ if szo:
     df["szó_normalizalt"] = df["szó"].astype(str).apply(remove_accents)
     szo_norm = remove_accents(szo)
     talalatok = df[df["szó_normalizalt"].str.contains(szo_norm, na=False)].drop('szó_normalizalt', axis=1)
+    df = df.drop('szó_normalizalt', axis=1)
     if talalatok.empty:
         st.info(f"❌ A '{szo}' szó még nem szerepelt.")
     else:
