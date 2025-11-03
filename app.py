@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 import unicodedata
 from io import StringIO
+import math
 
 FILENAME = "nap_szava.csv"
 
