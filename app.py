@@ -56,5 +56,5 @@ if st.button("Mutasd!"):
         st.success(f"✅ Szavak {honap:02d}-{nap:02d} napokon:")
         st.dataframe(
             talalatok.sort_values("dátum", ascending=False)
-                      .reset_index(drop=True)
+                      .reset_index(drop=True).drop('szó_normalizalt', axis=1)
         )
