@@ -1,8 +1,15 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import unicodedata
 
 FILENAME = "nap_szava.csv"
+
+def remove_accents(text):
+    if not isinstance(text, str):
+        return text
+    nfkd = unicodedata.normalize('NFKD', text)
+    return "".join([c for c in nfkd if not unicodedata.combining(c)]).lower()
 
 # --- Adatbetöltés ---
 @st.cache_data
@@ -23,7 +30,9 @@ st.markdown("Tartsd számon, hogy melyik napon mi volt a nap szava – és ki k�
 st.header("🔍 Keresés szóra")
 szo = st.text_input("Adj meg egy szót:")
 if szo:
-    talalatok = df[df["szó"].str.lower().str.contains(szo.lower())]
+    df["szó_normalizalt"] = df["szó"].apply(remove_accents)
+    szo_norm = remove_accents(szo)
+    talalatok = df[df["szó_normalizalt"].str.contains(szo_norm)]
     if talalatok.empty:
         st.info(f"❌ A '{szo}' szó még nem szerepelt.")
     else:
@@ -49,21 +58,3 @@ if st.button("Mutasd!"):
             talalatok.sort_values("datum", ascending=False)
                       .reset_index(drop=True)
         )
-
-# --- Új szó hozzáadása ---
-st.header("➕ Új szó hozzáadása")
-uj_szo = st.text_input("Új szó:")
-bekuldo = st.text_input("Beküldő neve:")
-
-if st.button("Hozzáadás"):
-    if uj_szo and bekuldo:
-        uj = pd.DataFrame({
-            "datum": [datetime.now().strftime("%Y-%m-%d")],
-            "szó": [uj_szo],
-            "beküldő": [bekuldo]
-        })
-        df = pd.concat([df, uj], ignore_index=True)
-        df.to_csv(FILENAME, index=False)
-        st.success(f"✅ '{uj_szo}' hozzáadva ({bekuldo})")
-    else:
-        st.warning("Add meg a szót és a beküldőt is!")
