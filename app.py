@@ -62,15 +62,15 @@ if st.button("Mutasd!"):
                       .reset_index(drop=True)
         )
 
-st.header("🧹 Manuális szűrés és CSV frissítés")
-
 st.set_page_config(page_title="Nap szava - Szűrés", layout="wide")
 
 st.header("🧹 Manuális szűrés és CSV frissítés")
 
-# --- Állapot tárolása (pl. utolsó feldolgozott index) ---
+# --- Állapot tárolása (pl. utolsó feldolgozott index, aktuális oldal) ---
 if "last_index" not in st.session_state:
     st.session_state.last_index = 0
+if "page" not in st.session_state:
+    st.session_state.page = 1
 
 # --- Fájlfeltöltés ---
 uploaded_file = st.file_uploader("Töltsd fel az eredeti CSV-t", type=["csv"])
@@ -89,25 +89,37 @@ if uploaded_file:
 
     # --- Lapozás beállítás ---
     page_size = 100
-    total_pages = math.ceil(len(filtered_df) / page_size)
+    total_pages = max(1, math.ceil(len(filtered_df) / page_size))
+    current_page = st.session_state.page
 
-    page = st.number_input("Oldalszám", min_value=1, max_value=max(1, total_pages), value=1, step=1)
-
-    start = (page - 1) * page_size
+    # --- Oldalakhoz tartozó indexek ---
+    start = (current_page - 1) * page_size
     end = start + page_size
-
     paged_df = filtered_df.iloc[start:end].copy()
 
-    st.caption(f"{len(filtered_df)} sor megjelenítve a {len(df)}-ből. ({total_pages} oldal)")
+    st.caption(f"{len(filtered_df)} sor megjelenítve a {len(df)}-ből ({total_pages} oldal).")
 
-    # --- Táblázatos megjelenítés checkboxokkal ---
+    # --- Táblázatos megjelenítés ---
+    st.markdown("""
+        <style>
+        .small-table td, .small-table th {
+            white-space: nowrap !important;
+            text-align: left !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     st.write("✅ Pipáld ki a törlendő sorokat (több is kijelölhető):")
+
+    # Checkbox oszlop hozzáadása, ha nincs még
+    if "delete" not in paged_df.columns:
+        paged_df["delete"] = False
 
     edited_df = st.data_editor(
         paged_df,
-        num_rows="dynamic",
         use_container_width=True,
-        key=f"editor_page_{page}",
+        hide_index=False,
+        num_rows="dynamic",
         column_config={
             "delete": st.column_config.CheckboxColumn(
                 "Törlés",
@@ -115,24 +127,57 @@ if uploaded_file:
                 default=False,
             )
         },
-        hide_index=False
+        key=f"editor_page_{current_page}"
     )
 
-    # --- Sorok törlése ---
+    # --- Oldalszámozás a táblázat alatt ---
+    st.markdown("---")
+    st.write("### 📄 Lapozás")
+
+    cols = st.columns(9)
+    first, prev = cols[0], cols[1]
+    next_, last = cols[-2], cols[-1]
+
+    if first.button("⏮️ Első oldal"):
+        st.session_state.page = 1
+        st.rerun()
+    if prev.button("◀️ Előző"):
+        if st.session_state.page > 1:
+            st.session_state.page -= 1
+            st.rerun()
+
+    # Számozott oldalgombok (pl. 5 egymás után)
+    start_page = max(1, current_page - 2)
+    end_page = min(total_pages, start_page + 4)
+    for i, page_num in enumerate(range(start_page, end_page + 1)):
+        cols[i + 2].button(
+            str(page_num),
+            key=f"page_{page_num}",
+            on_click=lambda p=page_num: st.session_state.update(page=p),
+        )
+
+    if next_.button("Következő ▶️"):
+        if st.session_state.page < total_pages:
+            st.session_state.page += 1
+            st.rerun()
+    if last.button("Utolsó ⏭️"):
+        st.session_state.page = total_pages
+        st.rerun()
+
+    # --- Törlés és letöltés ---
+    st.markdown("---")
     if st.button("🗑️ Kijelölt sorok törlése ebben az oldalban"):
         if "delete" in edited_df.columns:
             delete_indices = edited_df[edited_df["delete"] == True].index
             df = df.drop(delete_indices).reset_index(drop=True)
             st.success(f"{len(delete_indices)} sor törölve.")
 
-            # Frissítjük a session state-et, hogy megjegyezze, hol tartottál
             if len(delete_indices) > 0:
                 st.session_state.last_index = delete_indices[-1] + 1
 
         else:
             st.warning("Nincs kijelölt sor a törléshez.")
 
-        # Frissített CSV letöltése
         csv = df.to_csv(index=False).encode("utf-8")
         st.download_button(
             label="📥 Letisztított CSV letöltése",
@@ -141,7 +186,6 @@ if uploaded_file:
             mime="text/csv",
         )
 
-    # --- Utolsó feldolgozott sor megjelenítése ---
     if st.session_state.last_index > 0:
         st.info(f"📍 Utolsó feldolgozott sor indexe: {st.session_state.last_index}")
 else:
