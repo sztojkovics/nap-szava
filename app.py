@@ -138,10 +138,10 @@ if uploaded_file:
     first, prev = cols[0], cols[1]
     next_, last = cols[-2], cols[-1]
 
-    if first.button("⏮️ Első oldal"):
+    if first.button("<<"):
         st.session_state.page = 1
         st.rerun()
-    if prev.button("◀️ Előző"):
+    if prev.button("<"):
         if st.session_state.page > 1:
             st.session_state.page -= 1
             st.rerun()
@@ -156,11 +156,11 @@ if uploaded_file:
             on_click=lambda p=page_num: st.session_state.update(page=p),
         )
 
-    if next_.button("Következő ▶️"):
+    if next_.button(">"):
         if st.session_state.page < total_pages:
             st.session_state.page += 1
             st.rerun()
-    if last.button("Utolsó ⏭️"):
+    if last.button(">>"):
         st.session_state.page = total_pages
         st.rerun()
 
