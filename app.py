@@ -217,7 +217,7 @@ else:
                 st.session_state.page += 1
                 st.experimental_rerun()
     with pager_cols[4]:
-        if st.button(">>"):
+        if st.button("\>\>"):
             st.session_state.page = total_pages
             st.experimental_rerun()
 
