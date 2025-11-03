@@ -66,7 +66,7 @@ st.set_page_config(page_title="Nap szava - Szűrés", layout="wide")
 
 st.header("🧹 Manuális szűrés és CSV frissítés")
 
-# --- Állapot tárolása (pl. utolsó feldolgozott index, aktuális oldal) ---
+# --- Állapot tárolása ---
 if "last_index" not in st.session_state:
     st.session_state.last_index = 0
 if "page" not in st.session_state:
@@ -99,7 +99,7 @@ if uploaded_file:
 
     st.caption(f"{len(filtered_df)} sor megjelenítve a {len(df)}-ből ({total_pages} oldal).")
 
-    # --- Táblázatos megjelenítés ---
+    # --- Táblázat stílus ---
     st.markdown("""
     <style>
     div[data-testid="stDataFrame"] table {
@@ -116,9 +116,9 @@ if uploaded_file:
     </style>
     """, unsafe_allow_html=True)
 
+    # --- Táblázat megjelenítése ---
     st.write("✅ Pipáld ki a törlendő sorokat (több is kijelölhető):")
 
-    # Checkbox oszlop hozzáadása, ha nincs még
     if "delete" not in paged_df.columns:
         paged_df["delete"] = False
 
@@ -126,9 +126,13 @@ if uploaded_file:
         paged_df,
         use_container_width=True,
         hide_index=False,
-        height=600,
+        height=600,  # fix magasság, nem ugrál
         column_config={
-            "delete": st.column_config.CheckboxColumn("Törlés", default=False)
+            "delete": st.column_config.CheckboxColumn(
+                "Törlés",
+                help="Pipáld be, ha ezt a sort törölni szeretnéd.",
+                default=False,
+            )
         },
         key=f"editor_page_{current_page}"
     )
@@ -149,7 +153,6 @@ if uploaded_file:
             st.session_state.page -= 1
             st.rerun()
 
-    # Számozott oldalgombok (pl. 5 egymás után)
     start_page = max(1, current_page - 2)
     end_page = min(total_pages, start_page + 4)
     for i, page_num in enumerate(range(start_page, end_page + 1)):
@@ -163,7 +166,7 @@ if uploaded_file:
         if st.session_state.page < total_pages:
             st.session_state.page += 1
             st.rerun()
-    if last.button("\>\>"):
+    if last.button("\>>"):
         st.session_state.page = total_pages
         st.rerun()
 
