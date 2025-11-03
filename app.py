@@ -30,7 +30,7 @@ st.markdown("Tartsd számon, hogy melyik napon mi volt a nap szava – és ki k�
 st.header("🔍 Keresés szóra")
 szo = st.text_input("Adj meg egy szót:")
 if szo:
-    df["szó_normalizalt"] = df["szó"]..astype(str).apply(remove_accents)
+    df["szó_normalizalt"] = df["szó"].astype(str).apply(remove_accents)
     szo_norm = remove_accents(szo)
     talalatok = df[df["szó_normalizalt"].str.contains(szo_norm, na=False)]
     if talalatok.empty:
