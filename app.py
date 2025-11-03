@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import unicodedata
+from io import StringIO
 
 FILENAME = "nap_szava.csv"
 
@@ -58,4 +59,54 @@ if st.button("Mutasd!"):
         st.dataframe(
             talalatok.sort_values("dátum", ascending=False)
                       .reset_index(drop=True)
+        )
+
+st.header("🧹 Manuális szűrés és CSV frissítés")
+
+# --- Fájlfeltöltés ---
+uploaded_file = st.file_uploader("Töltsd fel az eredeti CSV-t", type=["csv"])
+
+if uploaded_file:
+    df = pd.read_csv(uploaded_file)
+
+    st.subheader("🔍 Szűrés kulcsszóra")
+    filter_text = st.text_input("Adj meg egy kulcsszót (kis/nagybetű mindegy):", "")
+
+    # --- Szűrés ---
+    if filter_text:
+        filtered_df = df[df.astype(str).apply(lambda row: row.str.contains(filter_text, case=False, na=False)).any(axis=1)]
+    else:
+        filtered_df = df.copy()
+
+    st.caption(f"{len(filtered_df)} sor megjelenítve a {len(df)}-ből.")
+
+    # --- Select All / Deselect All ---
+    select_all = st.checkbox("✅ Mindent kijelöl / kijelölés törlése")
+
+    st.write("Jelöld ki a törlendő sorokat:")
+
+    to_delete = []
+
+    for i, row in filtered_df.iterrows():
+        checked = st.checkbox(
+            f"{row.get('szó', '')} – {row.get('beküldte', '')}",
+            key=f"chk_{i}",
+            value=select_all,
+        )
+        if checked:
+            to_delete.append(row.name)
+
+    # --- Törlés gomb ---
+    if st.button("🗑️ Kijelölt sorok törlése"):
+        df = df.drop(to_delete).reset_index(drop=True)
+        st.success(f"{len(to_delete)} sor törölve. Új méret: {len(df)} sor.")
+        st.dataframe(df)
+
+        # --- Letöltés ---
+        csv = df.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            label="📥 Letisztított CSV letöltése",
+            data=csv,
+            file_name="nap_szava_cleaned.csv",
+            mime="text/csv",
         )
