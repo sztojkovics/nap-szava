@@ -17,7 +17,7 @@ def remove_accents(text):
 @st.cache_data
 def load_data():
     try:
-        return pd.read_csv(FILENAME, parse_dates=["dátum"]).dropna()
+        return pd.read_csv(FILENAME, parse_dates=["dátum"]).dropna().sort_values("dátum")
     except FileNotFoundError:
         return pd.DataFrame(columns=["dátum", "szó", "beküldő"])
 
