@@ -51,7 +51,7 @@ honap = st.number_input("Hónap:", min_value=1, max_value=12, value=datetime.now
 nap = st.number_input("Nap:", min_value=1, max_value=31, value=datetime.now().day)
 
 if st.button("Mutasd!"):
-    df["dátum"] = pd.to_datetime(df["dátum"])
+    df["dátum"] = pd.to_datetime(df["dátum"], format='mixed')
     talalatok = df[(df["dátum"].dt.month == honap) & (df["dátum"].dt.day == nap)]
     if talalatok.empty:
         st.info("Ezen a napon még nem volt szó.")
